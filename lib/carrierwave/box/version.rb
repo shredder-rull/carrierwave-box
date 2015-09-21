@@ -1,5 +1,5 @@
 module Carrierwave
   module Box
-    VERSION = "0.2.pre1"
+    VERSION = "0.2.pre2"
   end
 end

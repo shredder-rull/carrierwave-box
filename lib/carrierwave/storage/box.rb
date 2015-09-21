@@ -116,9 +116,9 @@ module CarrierWave
 					url ||= ''
 				end
 
-				def delete
-					file_temp = @client.file_from_path(@path)
+				def delete					
 					begin
+						file_temp = @client.file_from_path(@path)
 						@client.delete_file(file_temp, if_match: nil)
 					rescue Boxr::BoxrError => e
 					end
