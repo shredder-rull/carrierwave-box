@@ -36,14 +36,21 @@ So simple:
   ```ruby
 
       CarrierWave.configure do |config|
-        config.box_client_id = 'your_client_id'
-        config.box_client_secret = 'your_secret_id'
-        config.box_email = 'your_box_email'
-        config.box_password = 'your_box_password'
-        config.box_access_type = "box"
-        config.cache_dir = "#{Rails.root}/tmp/uploads"
-        config.enable_processing = true
-      end
+        config.box_client_id            = ENV['BOX_CLIENT_ID']
+        config.box_client_secret        = ENV['BOX_CLIENT_SECRET']
+        
+        config.jwt_private_key_path     = ENV['JWT_PRIVATE_KEY_PATH'] # if using box enterprise or nil
+        config.jwt_private_key_password = ENV['JWT_PRIVATE_KEY_PASSWORD']
+        config.box_enterprise_id        = ENV['BOX_ENTERPRISE_ID']
+        
+        config.box_email                = 'your_box_email' # if using simple acaunt
+        config.box_password             = 'your_box_password'
+        
+        config.box_access_type          = "box"
+        config.cache_dir                = "#{Rails.root}/tmp/uploads"
+        config.enable_processing        = true
+        config.storage                  = :box
+      end       
   ```
 
 Special of this gem:
