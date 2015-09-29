@@ -72,7 +72,7 @@ module CarrierWave
 			end
 
 			def jwt_private_key
-				@jwt_private_key ||= uploader.jwt_private_key || (uploader.jwt_private_key_path.present? ? File.read(uploader.jwt_private_key_path) : nil)
+				@jwt_private_key ||= uploader.jwt_private_key || (uploader.jwt_private_key_path.present? ? ::File.read(uploader.jwt_private_key_path) : nil)
 			end
 
 			def create_folders_from_path(path)
