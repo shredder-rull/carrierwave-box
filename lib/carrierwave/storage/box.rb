@@ -11,10 +11,8 @@ module CarrierWave
 
 			# Store a single file
 			def store!(file)
-				client = uploader.jwt_private_key_path.present? ? box_client_jwt : box_client
-
 				# Try to create folders
-				create_folders_from_path(uploader.store_dir, client)
+				create_folders_from_path(uploader.store_dir)
 
 				# Upload file
 				begin
@@ -36,13 +34,16 @@ module CarrierWave
 
 			# Retrieve a single file
 			def retrieve!(file)
-				client = uploader.jwt_private_key_path.present? ? box_client_jwt : box_client
-				CarrierWave::Storage::Box::File.new(uploader, config, uploader.store_path(file), client)
+				CarrierWave::Storage::Box::File.new(uploader, uploader.store_path(file), client)
 			end
 
 			private
 			def link_out client_id
 				"https://www.box.com/api/oauth2/authorize?client_id=#{client_id}&redirect_uri=http%3A%2F%2Flocalhost&response_type=code"
+			end
+
+			def client
+				@client ||= jwt_private_key.present? ? box_client_jwt : box_client
 			end
 
 			def box_client
@@ -61,28 +62,20 @@ module CarrierWave
 			end
 
 			def box_client_jwt
-				token = Boxr::get_enterprise_token(private_key: IO.readlines(uploader.jwt_private_key_path).map{|l| l}.join, private_key_password: uploader.jwt_private_key_password, enterprise_id: uploader.box_enterprise_id, client_id: uploader.box_client_id, client_secret: uploader.box_client_secret)
-				Boxr::Client.new(token)
+				token = Boxr::get_user_token(uploader.jwt_user_id, {
+						private_key: jwt_private_key,
+						private_key_password: uploader.jwt_private_key_password,
+						client_id: uploader.box_client_id,
+						client_secret: uploader.box_client_secret
+					})
+				Boxr::Client.new(token.access_token)
 			end
 
-			def config
-				@config ||= {}
-
-				@config[:box_client_id] ||= uploader.box_client_id
-				@config[:box_client_secret] ||= uploader.box_client_secret
-				@config[:box_email] ||= uploader.box_email
-				@config[:box_password] ||= uploader.box_password
-				@config[:box_access_type] ||= uploader.box_access_type || "box"
-
-
-				@config[:jwt_private_key_path] ||= uploader.jwt_private_key_path
-				@config[:jwt_private_key_password] ||= uploader.jwt_private_key_password
-				@config[:box_enterprise_id] ||= uploader.box_enterprise_id
-
-				@config
+			def jwt_private_key
+				@jwt_private_key ||= uploader.jwt_private_key || (uploader.jwt_private_key_path.present? ? File.read(uploader.jwt_private_key_path) : nil)
 			end
 
-			def create_folders_from_path(path, client)
+			def create_folders_from_path(path)
 				folders = path.split('/')
 				folders.each_with_index do |f, i|
 					begin
@@ -103,26 +96,25 @@ module CarrierWave
 				include CarrierWave::Utilities::Uri
 				attr_reader :path
 
-				def initialize(uploader, config, path, client)
-					@uploader, @config, @path, @client = uploader, config, path, client
+				def initialize(uploader, path, client)
+					@uploader, @path, @client = uploader, path, client
 				end
 
 				def url
 					file_temp = @client.file_from_path(path)
-					file = @client.download_url(file_temp, version: nil)
+					@client.download_url(file_temp, version: nil)
 				end
 
 				def to_s
 					url ||= ''
 				end
 
-				def delete					
-					begin
-						file_temp = @client.file_from_path(@path)
-						@client.delete_file(file_temp, if_match: nil)
-					rescue Boxr::BoxrError => e
-					end
+				def delete
+					file_temp = @client.file_from_path(@path)
+					@client.delete_file(file_temp, if_match: nil)
+				rescue Boxr::BoxrError => e
 				end
+
 			end
 		end
 	end

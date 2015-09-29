@@ -13,9 +13,11 @@ class CarrierWave::Uploader::Base
   add_config :box_access_type
 
   # jwt auth
+  add_config :jwt_private_key
   add_config :jwt_private_key_path
   add_config :jwt_private_key_password
-  add_config :box_enterprise_id 
+  add_config :jwt_user_id
+  add_config :box_enterprise_id
 
   configure do |config|
     config.storage_engines[:box] = 'CarrierWave::Storage::Box'
