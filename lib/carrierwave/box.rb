@@ -16,6 +16,7 @@ class CarrierWave::Uploader::Base
   add_config :jwt_private_key
   add_config :jwt_private_key_path
   add_config :jwt_private_key_password
+  add_config :jwt_public_key_id
   add_config :jwt_user_id
   add_config :box_enterprise_id
 

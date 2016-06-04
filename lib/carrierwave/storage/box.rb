@@ -2,6 +2,7 @@
 require 'rubygems'
 require 'boxr'
 require 'mechanize'
+require 'cache_method'
 
 
 module CarrierWave
@@ -62,14 +63,22 @@ module CarrierWave
 			end
 
 			def box_client_jwt
-				token = Boxr::get_user_token(uploader.jwt_user_id, {
-						private_key: jwt_private_key,
-						private_key_password: uploader.jwt_private_key_password,
-						client_id: uploader.box_client_id,
-						client_secret: uploader.box_client_secret
-					})
-				Boxr::Client.new(token.access_token)
+				Boxr::Client.new(box_jwt_access_token)
 			end
+
+			def box_jwt_access_token
+				token = Boxr::get_user_token(uploader.jwt_user_id, {
+					private_key: jwt_private_key,
+					private_key_password: uploader.jwt_private_key_password,
+					public_key_id: uploader.jwt_public_key_id,
+					client_id: uploader.box_client_id,
+					client_secret: uploader.box_client_secret
+				})
+
+				token.access_token
+			end
+
+			cache_method :box_jwt_access_token, 1.day
 
 			def jwt_private_key
 				@jwt_private_key ||= uploader.jwt_private_key || (uploader.jwt_private_key_path.present? ? ::File.read(uploader.jwt_private_key_path) : nil)
@@ -101,8 +110,12 @@ module CarrierWave
 				end
 
 				def url
-					file_temp = @client.file_from_path(path)
-					@client.download_url(file_temp, version: nil)
+					@client.download_url(file_info, version: nil)
+				end
+				cache_method :url
+
+				def read
+					@client.download_file(file_info, version: nil, follow_redirect: true)
 				end
 
 				def to_s
@@ -112,8 +125,21 @@ module CarrierWave
 				def delete
 					file_temp = @client.file_from_path(@path)
 					@client.delete_file(file_temp, if_match: nil)
+					cache_method_clear :file_info
+					cache_method_clear :url
 				rescue Boxr::BoxrError => e
 				end
+
+				def as_cache_key
+    			path
+  			end
+
+				private
+
+				def file_info
+					@client.file_from_path(path)
+				end
+				cache_method :file_info
 
 			end
 		end
