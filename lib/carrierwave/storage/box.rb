@@ -109,10 +109,10 @@ module CarrierWave
 					@uploader, @path, @client = uploader, path, client
 				end
 
-				def url
-					@client.download_url(file_info, version: nil)
+				def url(options = {})
+					@client.download_url(file_info, options.merge(version: nil))
 				end
-				cache_method :url
+				cache_method :url, 1.hour
 
 				def read
 					@client.download_file(file_info, version: nil, follow_redirect: true)
