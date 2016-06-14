@@ -13,6 +13,8 @@ module CarrierWave
 				# Try to create folders
 				create_folders_from_path(uploader.store_dir)
 
+				Rails.logger.info("Store to box, file: #{file}, dir: #{uploader.store_dir}")
+
 				# Upload file
 				begin
 					folder_will_up = client.folder_from_path(uploader.store_dir)
@@ -25,6 +27,8 @@ module CarrierWave
 
 						# Create new one
 						file_up = client.upload_file(file.to_file, folder_will_up)
+					else	
+						Rails.logger.error(e.message)
 					end
 				end
 
