@@ -2,8 +2,6 @@
 require 'rubygems'
 require 'boxr'
 require 'mechanize'
-require 'cache_method'
-
 
 module CarrierWave
 	module Storage
@@ -39,49 +37,9 @@ module CarrierWave
 			end
 
 			private
-			def link_out client_id
-				"https://www.box.com/api/oauth2/authorize?client_id=#{client_id}&redirect_uri=http%3A%2F%2Flocalhost&response_type=code"
-			end
 
 			def client
-				@client ||= jwt_private_key.present? ? box_client_jwt : box_client
-			end
-
-			def box_client
-				@mechanize = Mechanize.new
-				page = @mechanize.get(link_out(uploader.box_client_id))
-				@mechanize.follow_meta_refresh = true
-				form = page.form
-				form.login = uploader.box_email
-				form.password = uploader.box_password
-				page1 = form.submit
-				form1 = page1.form
-				page_next = form1.submit
-				code = page_next.uri.to_s.split('code=').last				
-				token = Boxr::get_tokens(code, grant_type: "authorization_code", assertion: nil, scope: nil, username: nil, client_id: uploader.box_client_id, client_secret: uploader.box_client_secret).access_token
-				Boxr::Client.new(token)
-			end
-
-			def box_client_jwt
-				Boxr::Client.new(box_jwt_access_token)
-			end
-
-			def box_jwt_access_token
-				token = Boxr::get_user_token(uploader.jwt_user_id, {
-					private_key: jwt_private_key,
-					private_key_password: uploader.jwt_private_key_password,
-					public_key_id: uploader.jwt_public_key_id,
-					client_id: uploader.box_client_id,
-					client_secret: uploader.box_client_secret
-				})
-
-				token.access_token
-			end
-
-			cache_method :box_jwt_access_token, 1.day
-
-			def jwt_private_key
-				@jwt_private_key ||= uploader.jwt_private_key || (uploader.jwt_private_key_path.present? ? ::File.read(uploader.jwt_private_key_path) : nil)
+				@client ||= Carrierwave::Box::Client.new(uploader)
 			end
 
 			def create_folders_from_path(path)
@@ -112,7 +70,6 @@ module CarrierWave
 				def url(options = {})
 					@client.download_url(file_info, options.merge(version: nil))
 				end
-				cache_method :url, 1.hour
 
 				def read
 					@client.download_file(file_info, version: nil, follow_redirect: true)

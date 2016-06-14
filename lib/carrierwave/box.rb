@@ -1,4 +1,6 @@
+require 'cache_method'  
 require 'carrierwave'
+require "carrierwave/box/client"
 require 'carrierwave/storage/box'
 require "carrierwave/box/version"
 
