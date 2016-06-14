@@ -83,7 +83,6 @@ module CarrierWave
 					file_temp = @client.file_from_path(@path)
 					@client.delete_file(file_temp, if_match: nil)
 					cache_method_clear :file_info
-					cache_method_clear :url
 				rescue Boxr::BoxrError => e
 				end
 
@@ -96,7 +95,7 @@ module CarrierWave
 				def file_info
 					@client.file_from_path(path)
 				end
-				cache_method :file_info
+				cache_method :file_info, 1.hour
 
 			end
 		end

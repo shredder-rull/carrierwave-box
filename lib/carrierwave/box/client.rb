@@ -11,6 +11,10 @@ module Carrierwave
         @client ||= jwt_private_key.present? ? Boxr::Client.new(box_jwt_access_token) : Boxr::Client.new(box_access_token)
       end
 
+      def to_cache_key
+        'boxr'
+      end
+
       private
 
       def link_out client_id
